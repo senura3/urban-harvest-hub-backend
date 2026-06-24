@@ -255,12 +255,13 @@ const queries = {
     } else {
       const id = 'item_' + Date.now()
       const createdAt = new Date().toISOString()
+      const itemDate = data.date instanceof Date ? data.date.toISOString() : (data.date || '')
       sqliteDb.prepare(`
         INSERT INTO items (id, name, description, category, type, price, availability, imageUrl, date, location, createdAt)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).run(
         id, data.name, data.description, data.category, data.type, 
-        data.price, data.availability, data.imageUrl, data.date || '', data.location || '', createdAt
+        data.price, data.availability, data.imageUrl, itemDate, data.location || '', createdAt
       )
       return { id, createdAt, ...data }
     }
@@ -269,13 +270,14 @@ const queries = {
     if (isMongo) {
       return await ItemModel.findByIdAndUpdate(id, data, { new: true })
     } else {
+      const itemDate = data.date instanceof Date ? data.date.toISOString() : (data.date || '')
       sqliteDb.prepare(`
         UPDATE items 
         SET name = ?, description = ?, category = ?, type = ?, price = ?, availability = ?, imageUrl = ?, date = ?, location = ?
         WHERE id = ?
       `).run(
         data.name, data.description, data.category, data.type, 
-        data.price, data.availability, data.imageUrl, data.date || '', data.location || '', id
+        data.price, data.availability, data.imageUrl, itemDate, data.location || '', id
       )
       return { id, ...data }
     }
@@ -324,11 +326,12 @@ const queries = {
       return await EventModel.create(data)
     } else {
       const id = 'ev_' + Date.now()
+      const eventDate = data.date instanceof Date ? data.date.toISOString() : (data.date || '')
       sqliteDb.prepare(`
         INSERT INTO events (id, title, description, date, location, category, imageUrl, maxAttendees, latitude, longitude)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).run(
-        id, data.title, data.description || '', data.date, data.location || '', 
+        id, data.title, data.description || '', eventDate, data.location || '', 
         data.category || '', data.imageUrl || '', data.maxAttendees || 100, data.latitude || 0, data.longitude || 0
       )
       return { id, attendees: [], ...data }
@@ -338,12 +341,13 @@ const queries = {
     if (isMongo) {
       return await EventModel.findByIdAndUpdate(id, data, { new: true })
     } else {
+      const eventDate = data.date instanceof Date ? data.date.toISOString() : (data.date || '')
       sqliteDb.prepare(`
         UPDATE events 
         SET title = ?, description = ?, date = ?, location = ?, category = ?, imageUrl = ?, maxAttendees = ?, latitude = ?, longitude = ?
         WHERE id = ?
       `).run(
-        data.title, data.description || '', data.date, data.location || '', 
+        data.title, data.description || '', eventDate, data.location || '', 
         data.category || '', data.imageUrl || '', data.maxAttendees || 100, data.latitude || 0, data.longitude || 0, id
       )
       return { id, attendees: [], ...data }
@@ -363,12 +367,13 @@ const queries = {
       return await BookingModel.create(data)
     } else {
       const id = 'bk_' + Date.now()
+      const bookingDate = data.date instanceof Date ? data.date.toISOString() : (data.date || '')
       sqliteDb.prepare(`
         INSERT INTO bookings (id, userId, name, email, itemId, itemName, date, tickets, status)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'confirmed')
       `).run(
         id, data.user || 'anonymous', data.name || '', data.email || '', data.item || data.itemId,
-        data.itemName || 'Booking Item', data.date, data.tickets || 1
+        data.itemName || 'Booking Item', bookingDate, data.tickets || 1
       )
       return { id, status: 'confirmed', ...data }
     }
