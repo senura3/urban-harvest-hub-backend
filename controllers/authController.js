@@ -3,6 +3,14 @@ const jwt = require('jsonwebtoken')
 const webpush = require('web-push')
 const User = require('../models/User')
 const { queries } = require('../models/db')
+const fs = require('fs')
+const path = require('path')
+
+const logPushStatus = (message) => {
+  const logPath = path.join(__dirname, '../push_debug.log')
+  const timestamp = new Date().toISOString()
+  fs.appendFileSync(logPath, `[${timestamp}] ${message}\n`)
+}
 
 const JWT_SECRET = process.env.JWT_SECRET || 'super_secret_eco_key_harvest_hub_development'
 
@@ -123,7 +131,8 @@ const subscribe = async (req, res, next) => {
     
     // Send background push immediately
     webpush.sendNotification(pushConfig, payload)
-      .catch(err => console.error("Immediate welcome notification failed:", err))
+      .then(res => logPushStatus(`Immediate welcome push succeeded. Status: ${res.statusCode}`))
+      .catch(err => logPushStatus(`Immediate welcome push failed: ${err.message} (Status: ${err.statusCode}, Body: ${err.body})`))
 
     res.status(201).json({ success: true, message: 'Subscribed to push notifications successfully.' })
   } catch (err) {
@@ -143,7 +152,7 @@ const broadcastTest = async (req, res, next) => {
 
     console.log(`Test broadcast triggering for ${subscriptions.length} subscribers...`)
     
-    const pushPromises = subscriptions.map(sub => {
+    const pushPromises = subscriptions.map((sub, idx) => {
       const pushConfig = {
         endpoint: sub.endpoint,
         keys: {
@@ -152,7 +161,9 @@ const broadcastTest = async (req, res, next) => {
         }
       }
       return webpush.sendNotification(pushConfig, payload)
+        .then(res => logPushStatus(`Broadcast to sub ${idx+1} succeeded. Status: ${res.statusCode}`))
         .catch(err => {
+          logPushStatus(`Broadcast to sub ${idx+1} failed: ${err.message} (Status: ${err.statusCode}, Body: ${err.body})`)
           console.warn(`Pruning failed subscription endpoint: ${sub.endpoint}. Status: ${err.statusCode}`)
         })
     })
