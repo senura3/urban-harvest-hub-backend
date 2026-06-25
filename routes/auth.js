@@ -2,6 +2,7 @@ const express = require('express')
 const { body } = require('express-validator')
 const authController = require('../controllers/authController')
 const validate = require('../middleware/validate')
+const { authMiddleware, adminOnly } = require('../middleware/authMiddleware')
 
 const router = express.Router()
 
@@ -26,5 +27,6 @@ router.post('/login',
 
 router.get('/vapid-key', authController.getVapidKey)
 router.post('/subscribe', authController.subscribe)
+router.post('/broadcast-test', authMiddleware, adminOnly, authController.broadcastTest)
 
 module.exports = router

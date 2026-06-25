@@ -111,11 +111,45 @@ const subscribe = async (req, res, next) => {
   }
 }
 
+const broadcastTest = async (req, res, next) => {
+  const { title, body, url } = req.body
+  try {
+    const subscriptions = await queries.getSubscriptions()
+    const payload = JSON.stringify({
+      title: title || 'Urban Harvest Test Notification',
+      body: body || 'This is a test push notification broadcasted from the Hub!',
+      url: url || '/'
+    })
+
+    console.log(`Test broadcast triggering for ${subscriptions.length} subscribers...`)
+    
+    const pushPromises = subscriptions.map(sub => {
+      const pushConfig = {
+        endpoint: sub.endpoint,
+        keys: {
+          p256dh: sub.keys.p256dh,
+          auth: sub.keys.auth
+        }
+      }
+      return webpush.sendNotification(pushConfig, payload)
+        .catch(err => {
+          console.warn(`Pruning failed subscription endpoint: ${sub.endpoint}. Status: ${err.statusCode}`)
+        })
+    })
+
+    await Promise.all(pushPromises)
+    res.json({ success: true, message: `Notification broadcasted to ${subscriptions.length} active subscriber(s).` })
+  } catch (err) {
+    next(err)
+  }
+}
+
 module.exports = {
   register,
   login,
   getVapidKey,
   subscribe,
+  broadcastTest,
   vapidPublicKey,
   vapidPrivateKey
 }
