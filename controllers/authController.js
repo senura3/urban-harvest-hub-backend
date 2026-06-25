@@ -105,6 +105,26 @@ const subscribe = async (req, res, next) => {
   const subscription = req.body
   try {
     await queries.addSubscription(subscription)
+    
+    // Automatically send an immediate welcome test push notification to verify OS display
+    const payload = JSON.stringify({
+      title: 'Urban Harvest Hub',
+      body: 'Push notifications are successfully configured and working on your desktop!',
+      url: '/workshops'
+    })
+    
+    const pushConfig = {
+      endpoint: subscription.endpoint,
+      keys: {
+        p256dh: subscription.keys.p256dh,
+        auth: subscription.keys.auth
+      }
+    }
+    
+    // Send background push immediately
+    webpush.sendNotification(pushConfig, payload)
+      .catch(err => console.error("Immediate welcome notification failed:", err))
+
     res.status(201).json({ success: true, message: 'Subscribed to push notifications successfully.' })
   } catch (err) {
     next(err)
